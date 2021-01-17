@@ -1,0 +1,135 @@
+MongoDB shell version v4.2.2
+MongoDB server version: 4.2.2
+
+---
+
+> load("customer.js");
+true
+> load("part.js");
+true
+> load("supplier.js");
+true
+
+/* (1) Save information about a customer key, name, and nation of all customers from SUDAN or ROMANIA or CANADA into a collection SUROCAN. Display in a pretty format without document identifiers the contents of a collection SUROCAN. */;
+
+> db.tpchr.aggregate([
+... {$match: {$or:[ {"CUSTOMER.nation":"SUDAN"}, {"CUSTOMER.nation":"ROMANIA"},
+... {"CUSTOMER.nation":"CANADA"} ]} },
+... {$project: {"CUSTOMER.customer key":1,
+... "CUSTOMER.name":1,
+... "CUSTOMER.nation":1}},
+... {$out:"SUROCAN"}])
+>
+> db.SUROCAN.aggregate([ {$project: {"_id":0}} ]).pretty()
+{
+	"CUSTOMER" : {
+		"customer key" : 3,
+		"name" : "Customer#000000003",
+		"nation" : "SUDAN"
+	}
+}
+{
+	"CUSTOMER" : {
+		"customer key" : 5,
+		"name" : "Customer#000000005",
+		"nation" : "CANADA"
+	}
+}
+{
+	"CUSTOMER" : {
+		"customer key" : 6,
+		"name" : "Customer#000000006",
+		"nation" : "ROMANIA"
+	}
+}
+{
+	"CUSTOMER" : {
+		"customer key" : 9,
+		"name" : "Customer#000000003",
+		"nation" : "SUDAN"
+	}
+}
+{
+	"CUSTOMER" : {
+		"customer key" : 10,
+		"name" : "Customer#000000004",
+		"nation" : "CANADA"
+	}
+}
+> /* (2) Save all information about the supply costs (supplycost)of a part with a name floral moccasin royal powder burnished into a collection supplycosts that consists of the documents like {"supply cost": a-value-of-supply-cost}.Display in a pretty format without document identifiers all documents in a collection "supplycosts. */;
+> 
+> db.tpchr.aggregate([ {$match:{"PART.name":"floral moccasin royal powder burnished"}},
+... {$unwind:"$shipped"},
+... {$project:{"PART.shipped.PARTSUPP.supplycost":1,
+... "supply cost":"$PART.shipped.PARTSUPP.supplycost"}},
+... {$out:"supplycost"} ])
+> 
+> db.supplycost.aggregate([ {$project:{"_id":0}} ]).pretty()
+{
+	"PART" : {
+		"shipped" : [
+			{
+				"PARTSUPP" : {
+					"supplycost" : 164
+				}
+			},
+			{
+				"PARTSUPP" : {
+					"supplycost" : 996.12
+				}
+			},
+			{
+				"PARTSUPP" : {
+					"supplycost" : 673.27
+				}
+			},
+			{
+				"PARTSUPP" : {
+					"supplycost" : 374.02
+				}
+			},
+			{
+				
+			},
+			{
+				
+			},
+			{
+				
+			},
+			{
+				"PARTSUPP" : {
+					"supplycost" : 17
+				}
+			}
+		]
+	},
+	"supply cost" : [
+		164,
+		996.12,
+		673.27,
+		374.02,
+		17
+	]
+}
+> 
+> /* (3) Find the total number of part shipments of the parts of type LARGE BURNISHED STEEL or SMALL BURNISHED STEEL. Display a result in a format {"total number  of shipments":incsci235
+... teger-value}. */;
+> 
+> db.tpchr.aggregate([ {$match: {$or:[ {"PART.type":"LARGE BURNISHED STEEL"}, {"PART.type":"SMALL BURNISHED STEEL"} ]} },
+... {$unwind:"$PART.shipped"},
+... {$project:{"total number of shipments":"$PART.shipped.PARTSUPP"}}, 
+... {$count:"total number of shipments"} ])
+{ "total number of shipments" : 12 }
+> 
+>/* (4) Find the total number of shipments per each part. List the results in a format {"total number of shipments":integer-value,"part key":integer-value"} */;
+> db.tpchr.aggregate([ {$unwind:"$PART.shipped"},
+... {$project:{"total number of shipments":"$PART.shipped.PARTSUPP",
+... "part key":"$PART.part key"}}, 
+... {$count:"total number of shipments"},
+... {$group:{"_id":{"total number of shipments":"$total number of shipments",
+... "part key":"$part key"}}} ])
+{ "_id" : { "total number of shipments" : 40 } }
+>
+
+
